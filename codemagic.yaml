@@ -1,38 +1,24 @@
 workflows:
-  flutter-app:
-    name: Linkie-MO CI/CD
-    instance_type: mac_mini_m1 # Sử dụng máy Mac để build được cả iOS
+  android-free-workflow:
+    name: Linkie-MO Android Build (Free)
+    instance_type: mac_mini_m1
     max_build_duration: 60
     environment:
       groups:
-        - signing_credentials # Bạn sẽ tạo group này trên Codemagic UI
+        - signing_credentials 
       flutter: stable
-      xcode: latest
-    integrations:
-      app_store_connect: Codemagic # Đây là tên mặc định của kết nối Apple
     scripts:
       - name: Set up local.properties
         script: |
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
       - name: Get dependencies
         script: flutter pub get
-      - name: Build Android App Bundle
-        script: flutter build appbundle --release --build-name=1.0.$BUILD_NUMBER --build-number=$BUILD_NUMBER
-      - name: Build iOS IPA
+      - name: Build Android APK (File cài đặt trực tiếp)
         script: |
-          # Tự động hóa ký mã cho iOS
-          keychain initialize
-          app-store-connect fetch-signing-files "com.hieunhann.linkie_mo" --type IOS_APP_STORE --create
-          keychain add-certificates
-          xcode-project use-profiles
-          flutter build ipa --release --build-name=1.0.$BUILD_NUMBER --build-number=$BUILD_NUMBER --export-options-plist=/Users/builder/export_options.plist
+          flutter build apk --release --build-name=1.0.$BUILD_NUMBER --build-number=$BUILD_NUMBER
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
     publishing:
       email:
         recipients:
-          - tahieunhann@gmail.com # Tôi đã cập nhật theo email trong ảnh của bạn
-      google_play:
-        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        track: internal
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
+          - tahieunhann@gmail.com
