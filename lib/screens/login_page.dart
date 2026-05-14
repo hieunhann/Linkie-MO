@@ -1,0 +1,97 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../utils/theme.dart';
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _emailCtl = TextEditingController();
+  final _passCtl = TextEditingController();
+  String _error = '';
+  bool _loading = false;
+
+  Future<void> _handleLogin() async {
+    if (_emailCtl.text.trim().isEmpty || _passCtl.text.trim().isEmpty) {
+      setState(() => _error = 'Vui lòng nhập đầy đủ thông tin.');
+      return;
+    }
+    setState(() { _error = ''; _loading = true; });
+    try {
+      await context.read<AuthProvider>().login(_emailCtl.text, _passCtl.text);
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
+    } catch (e) {
+      setState(() => _error = 'Email hoặc mật khẩu không đúng.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() { _emailCtl.dispose(); _passCtl.dispose(); super.dispose(); }
+
+  InputDecoration _inputDeco(String hint) => InputDecoration(
+    hintText: hint, hintStyle: TextStyle(color: AppTheme.textTertiary),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTheme.borderStrong)),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryTeal)),
+    filled: true, fillColor: Colors.transparent,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.bgDark,
+      body: Column(children: [
+        Container(height: MediaQuery.of(context).size.height * 0.38, decoration: const BoxDecoration(gradient: AppTheme.gradientHeader)),
+        Expanded(child: Container(
+          width: double.infinity, transform: Matrix4.translationValues(0, -32, 0),
+          decoration: const BoxDecoration(color: AppTheme.bgDarkCard, borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32))),
+          child: SingleChildScrollView(padding: const EdgeInsets.fromLTRB(24, 32, 24, 24), child: Column(children: [
+            Image.asset('assets/images/logo-linkie-black.png', height: 64),
+            const SizedBox(height: 16),
+            Image.asset('assets/images/Linkie.png', height: 40),
+            const SizedBox(height: 8),
+            Text('Hệ thống quản trị sự kiện', style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+            const SizedBox(height: 32),
+            // Google button placeholder
+            Container(width: double.infinity, height: 48,
+              decoration: BoxDecoration(border: Border.all(color: Colors.red), borderRadius: BorderRadius.circular(12)),
+              child: InkWell(onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google Login chưa tích hợp.'))),
+                child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.g_mobiledata, color: Colors.white, size: 20), SizedBox(width: 12),
+                  Text('Tiếp tục với Google', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(children: [Expanded(child: Container(height: 1, color: Colors.white12)), Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text('hoặc', style: TextStyle(color: AppTheme.textTertiary, fontSize: 12))), Expanded(child: Container(height: 1, color: Colors.white12))]),
+            const SizedBox(height: 16),
+            TextField(controller: _emailCtl, keyboardType: TextInputType.emailAddress, style: const TextStyle(color: Colors.white, fontSize: 14), decoration: _inputDeco('Nhập email')),
+            const SizedBox(height: 12),
+            TextField(controller: _passCtl, obscureText: true, style: const TextStyle(color: Colors.white, fontSize: 14), decoration: _inputDeco('Mật khẩu')),
+            if (_error.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error, style: TextStyle(color: AppTheme.errorColorLight, fontSize: 12))),
+            const SizedBox(height: 16),
+            Row(children: [
+              Expanded(child: OutlinedButton(onPressed: () => Navigator.of(context).pop(), style: OutlinedButton.styleFrom(side: const BorderSide(color: AppTheme.primaryTeal), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), child: const Text('QUAY LẠI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 14)))),
+              const SizedBox(width: 12),
+              Expanded(child: Container(decoration: BoxDecoration(gradient: AppTheme.gradientPink, borderRadius: BorderRadius.circular(30)), child: ElevatedButton(onPressed: _loading ? null : _handleLogin, style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), child: Text(_loading ? '...' : 'ĐĂNG NHẬP', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 14))))),
+            ]),
+            const SizedBox(height: 20),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text('Bạn chưa có tài khoản? ', style: TextStyle(color: AppTheme.textTertiary, fontSize: 12)),
+              GestureDetector(onTap: () => Navigator.of(context).pushNamed('/register'), child: const Text('Đăng ký ngay', style: TextStyle(color: AppTheme.primaryTeal, fontSize: 12))),
+            ]),
+            const SizedBox(height: 32),
+            Text('Bằng việc đăng nhập, bạn đồng ý với Điều khoản dịch vụ\nvà Chính sách bảo mật của Linkie.', textAlign: TextAlign.center, style: TextStyle(color: AppTheme.textTertiary, fontSize: 11, height: 1.5)),
+          ])),
+        )),
+      ]),
+    );
+  }
+}
