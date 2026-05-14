@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # linkie_mo
 
 A new Flutter project.
@@ -14,3 +15,7 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+=======
+# Linkie_MO
+Linkie with MO
+>>>>>>> 38d6108d1020bf472e21405dcb569fc033c81088
