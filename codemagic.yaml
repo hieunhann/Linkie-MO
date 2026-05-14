@@ -8,6 +8,8 @@ workflows:
         - signing_credentials # Bạn sẽ tạo group này trên Codemagic UI
       flutter: stable
       xcode: latest
+    integrations:
+      app_store_connect: Codemagic # Đây là tên mặc định của kết nối Apple
     scripts:
       - name: Set up local.properties
         script: |
@@ -27,7 +29,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - your-email@gmail.com # Thay bằng email của bạn
+          - tahieunhann@gmail.com # Tôi đã cập nhật theo email trong ảnh của bạn
       google_play:
         credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
         track: internal
