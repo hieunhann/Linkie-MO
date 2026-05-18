@@ -22,3 +22,28 @@ workflows:
       email:
         recipients:
           - tahieunhann@gmail.com
+
+  ios-free-workflow:
+    name: Linkie-MO iOS Unsigned Build (Free for Students)
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      flutter: stable
+    scripts:
+      - name: Get dependencies
+        script: flutter pub get
+      - name: Build iOS (No Codesign)
+        script: |
+          flutter build ios --release --no-codesign --build-name=1.0.$BUILD_NUMBER --build-number=$BUILD_NUMBER
+      - name: Package Unsigned IPA
+        script: |
+          mkdir -p build/ios/iphoneos/Payload
+          cp -r build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/
+          cd build/ios/iphoneos
+          zip -r Runner.ipa Payload
+    artifacts:
+      - build/ios/iphoneos/*.ipa
+    publishing:
+      email:
+        recipients:
+          - tahieunhann@gmail.com
