@@ -14,6 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passCtl = TextEditingController();
   String _error = '';
   bool _loading = false;
+  bool _googleLoading = false;
 
   Future<void> _handleLogin() async {
     if (_emailCtl.text.trim().isEmpty || _passCtl.text.trim().isEmpty) {
@@ -29,6 +30,24 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _error = 'Email hoặc mật khẩu không đúng.');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() { _error = ''; _googleLoading = true; });
+    try {
+      await context.read<AuthProvider>().loginWithGoogle();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('hủy')) {
+        // User cancelled, no error shown
+      } else {
+        setState(() => _error = 'Đăng nhập Google thất bại. Vui lòng thử lại.');
+      }
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
     }
   }
 
@@ -53,30 +72,59 @@ class _LoginPageState extends State<LoginPage> {
           width: double.infinity, transform: Matrix4.translationValues(0, -32, 0),
           decoration: const BoxDecoration(color: AppTheme.bgDarkCard, borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32))),
           child: SingleChildScrollView(padding: const EdgeInsets.fromLTRB(24, 32, 24, 24), child: Column(children: [
-            Image.asset('assets/images/logo-linkie-black.png', height: 64),
+            // Logo MO - kích thước nguyên bản
+            Image.asset('assets/images/logo-mo.png'),
             const SizedBox(height: 16),
-            Image.asset('assets/images/Linkie.png', height: 40),
-            const SizedBox(height: 8),
             Text('Hệ thống quản trị sự kiện', style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
             const SizedBox(height: 32),
-            // Google button placeholder
-            Container(width: double.infinity, height: 48,
-              decoration: BoxDecoration(border: Border.all(color: Colors.red), borderRadius: BorderRadius.circular(12)),
-              child: InkWell(onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google Login chưa tích hợp.'))),
-                child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.g_mobiledata, color: Colors.white, size: 20), SizedBox(width: 12),
-                  Text('Tiếp tục với Google', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                ]),
+
+            // Nút Google Sign-In
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton(
+                onPressed: _googleLoading ? null : _handleGoogleLogin,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFDB4437), width: 1.5),
+                  backgroundColor: Colors.white.withOpacity(0.04),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _googleLoading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFDB4437)))
+                    : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        // Google "G" logo bằng Text styling
+                        Container(
+                          width: 24, height: 24,
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
+                          child: const Center(
+                            child: Text('G', style: TextStyle(
+                              color: Color(0xFFDB4437),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'serif',
+                            )),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Tiếp tục với Google', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+                      ]),
               ),
             ),
+
             const SizedBox(height: 16),
-            Row(children: [Expanded(child: Container(height: 1, color: Colors.white12)), Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text('hoặc', style: TextStyle(color: AppTheme.textTertiary, fontSize: 12))), Expanded(child: Container(height: 1, color: Colors.white12))]),
+            Row(children: [
+              Expanded(child: Container(height: 1, color: Colors.white12)),
+              Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text('hoặc', style: TextStyle(color: AppTheme.textTertiary, fontSize: 12))),
+              Expanded(child: Container(height: 1, color: Colors.white12)),
+            ]),
             const SizedBox(height: 16),
+
             TextField(controller: _emailCtl, keyboardType: TextInputType.emailAddress, style: const TextStyle(color: Colors.white, fontSize: 14), decoration: _inputDeco('Nhập email')),
             const SizedBox(height: 12),
             TextField(controller: _passCtl, obscureText: true, style: const TextStyle(color: Colors.white, fontSize: 14), decoration: _inputDeco('Mật khẩu')),
             if (_error.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error, style: TextStyle(color: AppTheme.errorColorLight, fontSize: 12))),
             const SizedBox(height: 16),
+
             Row(children: [
               Expanded(child: OutlinedButton(onPressed: () => Navigator.of(context).pop(), style: OutlinedButton.styleFrom(side: const BorderSide(color: AppTheme.primaryTeal), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), child: const Text('QUAY LẠI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 14)))),
               const SizedBox(width: 12),

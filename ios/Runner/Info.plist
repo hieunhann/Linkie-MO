@@ -45,5 +45,28 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- ======================== PERMISSIONS ======================== -->
+	<key>NSCameraUsageDescription</key>
+	<string>Ứng dụng cần truy cập camera để chụp ảnh và trải nghiệm các khung ảnh AR độc đáo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ứng dụng cần truy cập thư viện ảnh để bạn có thể chọn và lưu các bức ảnh chụp AR.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Ứng dụng cần quyền ghi vào thư viện ảnh để lưu giữ các bức ảnh chụp AR của bạn.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ứng dụng cần truy cập microphone để hỗ trợ tính năng camera.</string>
+
+	<!-- Google Sign-In URL Scheme -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.900115746759-conprjsc496dq1mgsk3npajeqer3gvo5</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

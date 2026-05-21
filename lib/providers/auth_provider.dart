@@ -5,11 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import '../models/auth_user.dart';
 import '../services/auth_service.dart';
+import '../services/google_auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthUser? _user;
   bool _loading = false;
   final AuthService _authService = AuthService();
+  final GoogleAuthService _googleAuthService = GoogleAuthService();
 
   AuthUser? get user => _user;
   bool get isLoggedIn => _user != null;
@@ -98,6 +100,29 @@ class AuthProvider extends ChangeNotifier {
       }
 
       throw Exception('No access token received');
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Login with Google
+  Future<AuthUser> loginWithGoogle() async {
+    _loading = true;
+    notifyListeners();
+
+    try {
+      final data = await _googleAuthService.signInWithGoogle();
+
+      if (data['accessToken'] != null) {
+        final user = _extractUserFromToken(data['accessToken']);
+        _user = user;
+        await _saveUser(user);
+        notifyListeners();
+        return user;
+      }
+
+      throw Exception('No access token received from Google login');
     } finally {
       _loading = false;
       notifyListeners();
