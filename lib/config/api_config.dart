@@ -1,9 +1,9 @@
 /// API configuration constants for Linkie Mobile App
 class ApiConfig {
   // For Android Emulator, use 10.0.2.2 instead of localhost
-  static const String baseUrl = 'http://10.0.2.2:5002/api';
-  static const String apiOrigin = 'http://10.0.2.2:5002';
-  static const String signalRHubUrl = 'http://10.0.2.2:5002/hubs/wishwall';
+  static const String baseUrl = 'https://linkie-be.onrender.com/api';
+  static const String apiOrigin = 'https://linkie-be.onrender.com';
+  static const String signalRHubUrl = 'https://linkie-be.onrender.com/hubs/wishwall';
 
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';
