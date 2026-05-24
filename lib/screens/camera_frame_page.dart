@@ -173,83 +173,90 @@ class _CameraFramePageState extends State<CameraFramePage> {
       ])));
     }
 
-    return Scaffold(backgroundColor: AppTheme.bgDarkAlt, body: Column(children: [
-      // Header
-      SafeArea(child: Padding(padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-        child: Row(children: [
-          GestureDetector(onTap: () => Navigator.of(context).pop(),
-            child: Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.1)),
-              child: const Icon(Icons.chevron_left, color: Colors.white, size: 14))),
-          const SizedBox(width: 8),
-          const Text('Camera AR', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Text('•', style: TextStyle(color: Colors.white.withOpacity(0.2)))),
-          Expanded(child: Text(_eventName, style: TextStyle(color: AppTheme.textTertiary, fontSize: 10, letterSpacing: 1), maxLines: 1, overflow: TextOverflow.ellipsis)),
-        ]),
-      )),
+    return Scaffold(
+      backgroundColor: AppTheme.bgDarkAlt,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Header
+              SafeArea(child: Padding(padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                child: Row(children: [
+                  GestureDetector(onTap: () => Navigator.of(context).pop(),
+                    child: Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.1)),
+                      child: const Icon(Icons.chevron_left, color: Colors.white, size: 14))),
+                  const SizedBox(width: 8),
+                  const Text('Camera AR', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Text('•', style: TextStyle(color: Colors.white.withOpacity(0.2)))),
+                  Expanded(child: Text(_eventName, style: TextStyle(color: AppTheme.textTertiary, fontSize: 10, letterSpacing: 1), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                ]),
+              )),
 
-      // Camera viewfinder
-      Expanded(child: Container(margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.borderLight)),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(fit: StackFit.expand, children: [
-          if (_cameraError.isNotEmpty)
-            Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Container(width: 64, height: 64, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.red.withOpacity(0.1), border: Border.all(color: Colors.red.withOpacity(0.2))),
-                child: const Icon(Icons.no_photography, color: Colors.red, size: 32)),
-              const SizedBox(height: 16),
-              Text(_cameraError, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
-            ]))
-          else if (_cameraCtl != null && _cameraCtl!.value.isInitialized)
-            Transform(alignment: Alignment.center, transform: _cameras[_cameraIdx].lensDirection == CameraLensDirection.front ? (Matrix4.identity()..scale(-1.0, 1.0)) : Matrix4.identity(),
-              child: CameraPreview(_cameraCtl!)),
+              // Camera viewfinder
+              Expanded(child: Container(margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.borderLight)),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(fit: StackFit.expand, children: [
+                  if (_cameraError.isNotEmpty)
+                    Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Container(width: 64, height: 64, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.red.withOpacity(0.1), border: Border.all(color: Colors.red.withOpacity(0.2))),
+                        child: const Icon(Icons.no_photography, color: Colors.red, size: 32)),
+                      const SizedBox(height: 16),
+                      Text(_cameraError, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+                    ]))
+                  else if (_cameraCtl != null && _cameraCtl!.value.isInitialized)
+                    Transform(alignment: Alignment.center, transform: _cameras[_cameraIdx].lensDirection == CameraLensDirection.front ? (Matrix4.identity()..scale(-1.0, 1.0)) : Matrix4.identity(),
+                      child: CameraPreview(_cameraCtl!)),
 
-          // Frame overlay
-          if (_frames.isNotEmpty && _selectedFrameIdx < _frames.length)
-            Positioned.fill(child: Image.network(_frames[_selectedFrameIdx].assetUrl.startsWith('http') ? _frames[_selectedFrameIdx].assetUrl : ApiConfig.ensureImageUrl(_frames[_selectedFrameIdx].assetUrl), fit: BoxFit.fill,
-              errorBuilder: (c, e, s) => const SizedBox())),
+                  // Frame overlay
+                  if (_frames.isNotEmpty && _selectedFrameIdx < _frames.length)
+                    Positioned.fill(child: Image.network(_frames[_selectedFrameIdx].assetUrl.startsWith('http') ? _frames[_selectedFrameIdx].assetUrl : ApiConfig.ensureImageUrl(_frames[_selectedFrameIdx].assetUrl), fit: BoxFit.fill,
+                      errorBuilder: (c, e, s) => const SizedBox())),
 
-          // Flash
-          if (_flashVisible) Container(color: Colors.white.withOpacity(0.8)),
+                  // Flash
+                  if (_flashVisible) Container(color: Colors.white.withOpacity(0.8)),
 
-          // Frame name tag
-          if (_frames.isNotEmpty && !_showFramePicker)
-            Positioned(bottom: 16, left: 0, right: 0, child: Center(child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(color: Colors.black.withOpacity(0.4), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.borderMedium)),
-              child: Text(_frames[_selectedFrameIdx].name, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 1)),
-            ))),
-        ]),
-      )),
+                  // Frame name tag
+                  if (_frames.isNotEmpty && !_showFramePicker)
+                    Positioned(bottom: 16, left: 0, right: 0, child: Center(child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.black.withOpacity(0.4), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.borderMedium)),
+                      child: Text(_frames[_selectedFrameIdx].name, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 1)),
+                    ))),
+                ]),
+              )),
 
-      // Controls
-      Padding(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          // Frame picker button
-          GestureDetector(onTap: () => setState(() => _showFramePicker = true),
-            child: Container(width: 56, height: 56, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05), border: Border.all(color: AppTheme.borderMedium)),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Container(width: 28, height: 28, decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), border: Border.all(color: AppTheme.primaryPink.withOpacity(0.5), width: 2, style: BorderStyle.solid)),
-                  clipBehavior: Clip.antiAlias,
-                  child: _frames.isNotEmpty ? Image.network(_frames[_selectedFrameIdx].assetUrl.startsWith('http') ? _frames[_selectedFrameIdx].assetUrl : ApiConfig.ensureImageUrl(_frames[_selectedFrameIdx].assetUrl), fit: BoxFit.contain, errorBuilder: (c, e, s) => const Icon(Icons.image, size: 16, color: Colors.pink)) : const Icon(Icons.image, size: 16, color: Colors.pink)),
-                Text('AR FRAME', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-              ]))),
-          // Capture button
-          GestureDetector(onTap: _handleCapture,
-            child: Container(width: 64, height: 64, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppTheme.primaryPink, width: 3), color: AppTheme.bgDarkAlt),
-              child: const Icon(Icons.camera, color: Colors.white, size: 32))),
-          // Switch camera button
-          GestureDetector(onTap: _toggleCamera,
-            child: Container(width: 56, height: 56, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05), border: Border.all(color: AppTheme.borderMedium)),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.cameraswitch, color: Colors.white.withOpacity(0.6), size: 24),
-                Text('Đổi Camera', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-              ]))),
-        ]),
+              // Controls
+              Padding(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  // Frame picker button
+                  GestureDetector(onTap: () => setState(() => _showFramePicker = true),
+                    child: Container(width: 56, height: 56, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05), border: Border.all(color: AppTheme.borderMedium)),
+                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Container(width: 28, height: 28, decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), border: Border.all(color: AppTheme.primaryPink.withOpacity(0.5), width: 2, style: BorderStyle.solid)),
+                          clipBehavior: Clip.antiAlias,
+                          child: _frames.isNotEmpty ? Image.network(_frames[_selectedFrameIdx].assetUrl.startsWith('http') ? _frames[_selectedFrameIdx].assetUrl : ApiConfig.ensureImageUrl(_frames[_selectedFrameIdx].assetUrl), fit: BoxFit.contain, errorBuilder: (c, e, s) => const Icon(Icons.image, size: 16, color: Colors.pink)) : const Icon(Icons.image, size: 16, color: Colors.pink)),
+                        Text('AR FRAME', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                      ]))),
+                  // Capture button
+                  GestureDetector(onTap: _handleCapture,
+                    child: Container(width: 64, height: 64, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppTheme.primaryPink, width: 3), color: AppTheme.bgDarkAlt),
+                      child: const Icon(Icons.camera, color: Colors.white, size: 32))),
+                  // Switch camera button
+                  GestureDetector(onTap: _toggleCamera,
+                    child: Container(width: 56, height: 56, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05), border: Border.all(color: AppTheme.borderMedium)),
+                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Icon(Icons.cameraswitch, color: Colors.white.withOpacity(0.6), size: 24),
+                        Text('Đổi Camera', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                      ]))),
+                ]),
+              ),
+            ],
+          ),
+          if (_showFramePicker) _buildFramePicker(),
+        ],
       ),
-
-      // Frame Picker popup
-      if (_showFramePicker) _buildFramePicker(),
-    ]));
+    );
   }
 
   Widget _buildFramePicker() {
