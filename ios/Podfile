@@ -7,7 +7,15 @@ platform :ios, '15.0'
 # COCOAPODS_DISABLE_STATS=true
 
 flutter_ios_podfile_setup = File.join(File.dirname(__FILE__), 'Flutter', 'podhelper.rb')
-require flutter_ios_podfile_setup
+if File.exist?(flutter_ios_podfile_setup)
+  require flutter_ios_podfile_setup
+else
+  flutter_root = ENV['FLUTTER_ROOT']
+  if flutter_root.nil?
+    flutter_root = File.expand_path('..', File.dirname(__FILE__))
+  end
+  require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+end
 
 target 'Runner' do
   use_frameworks!
