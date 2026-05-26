@@ -477,16 +477,21 @@ class _HomePageState extends State<HomePage> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          Text(
-                            '${startDate.year}',
-                            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '${startDate.year}',
+                              style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                            ),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
                     // Date badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: AppTheme.bgDark.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(12),
@@ -495,13 +500,19 @@ class _HomePageState extends State<HomePage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            'Tháng ${startDate.month}',
-                            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 9),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Tháng ${startDate.month}',
+                              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 9),
+                            ),
                           ),
-                          Text(
-                            startDate.day.toString().padLeft(2, '0'),
-                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              startDate.day.toString().padLeft(2, '0'),
+                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
+                            ),
                           ),
                         ],
                       ),

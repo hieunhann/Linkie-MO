@@ -23,6 +23,10 @@ class LkNavbar extends StatelessWidget implements PreferredSizeWidget {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
 
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
+    final isHomeActive = currentRoute == '/';
+    final isEventsActive = currentRoute.startsWith('/events');
+
     return Container(
       height: preferredSize.height + MediaQuery.of(context).padding.top,
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
@@ -50,9 +54,17 @@ class LkNavbar extends StatelessWidget implements PreferredSizeWidget {
             const Spacer(),
 
             // Nav links
-            _NavLink(label: 'Trang chủ', onTap: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false)),
+            _NavLink(
+              label: 'Trang chủ',
+              isActive: isHomeActive,
+              onTap: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false),
+            ),
             const SizedBox(width: 20),
-            _NavLink(label: 'Sự kiện', onTap: () => Navigator.of(context).pushNamed('/events')),
+            _NavLink(
+              label: 'Sự kiện',
+              isActive: isEventsActive,
+              onTap: () => Navigator.of(context).pushNamed('/events'),
+            ),
             const SizedBox(width: 20),
 
             // User section
@@ -80,20 +92,36 @@ class LkNavbar extends StatelessWidget implements PreferredSizeWidget {
 
 class _NavLink extends StatelessWidget {
   final String label;
+  final bool isActive;
   final VoidCallback onTap;
 
-  const _NavLink({required this.label, required this.onTap});
+  const _NavLink({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Text(
-        label,
-        style: TextStyle(
-          color: AppTheme.textSecondary,
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isActive ? AppTheme.primaryTealLight : Colors.transparent,
+              width: 2,
+            ),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.white : AppTheme.textSecondary,
+            fontSize: 13,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+          ),
         ),
       ),
     );

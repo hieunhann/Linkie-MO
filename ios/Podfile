@@ -1,0 +1,33 @@
+# Set platform to 15.0 for Firebase compatibility
+platform :ios, '15.0'
+
+# CocoaPods analytics sends network stats so organizations can focus on their
+# bundle size, build times and plan better. It does not send keys, secrets or
+# bundle ids. You can disable it by uncommenting the line below.
+# COCOAPODS_DISABLE_STATS=true
+
+flutter_ios_podfile_setup = File.join(File.dirname(__FILE__), 'Flutter', 'podhelper.rb')
+require flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    
+    # Kích hoạt các quyền cho permission_handler trên iOS
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
+        '$(inherited)',
+        'PERMISSION_CAMERA=1',
+        'PERMISSION_PHOTOS=1',
+        'PERMISSION_MICROPHONE=1',
+      ]
+    end
+  end
+end

@@ -82,32 +82,50 @@ class _LoginPageState extends State<LoginPage> {
             SizedBox(
               width: double.infinity,
               height: 50,
-              child: OutlinedButton(
+              child: ElevatedButton(
                 onPressed: _googleLoading ? null : _handleGoogleLogin,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFDB4437), width: 1.5),
-                  backgroundColor: Colors.white.withOpacity(0.04),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4285F4),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                 ),
                 child: _googleLoading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFDB4437)))
-                    : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        // Google "G" logo bằng Text styling
-                        Container(
-                          width: 24, height: 24,
-                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
-                          child: const Center(
-                            child: Text('G', style: TextStyle(
-                              color: Color(0xFFDB4437),
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'serif',
-                            )),
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Positioned(
+                            left: 2,
+                            top: 2,
+                            bottom: 2,
+                            child: Container(
+                              width: 46,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Image.asset('assets/images/google_logo.png', fit: BoxFit.contain),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text('Tiếp tục với Google', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
-                      ]),
+                          const Center(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Sign in with Google',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Roboto',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ),
 
@@ -126,9 +144,9 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 16),
 
             Row(children: [
-              Expanded(child: OutlinedButton(onPressed: () => Navigator.of(context).pop(), style: OutlinedButton.styleFrom(side: const BorderSide(color: AppTheme.primaryTeal), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), child: const Text('QUAY LẠI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 14)))),
+              Expanded(child: OutlinedButton(onPressed: () => Navigator.of(context).pop(), style: OutlinedButton.styleFrom(side: const BorderSide(color: AppTheme.primaryTeal), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), child: const FittedBox(fit: BoxFit.scaleDown, child: Text('QUAY LẠI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.0, fontSize: 13))))),
               const SizedBox(width: 12),
-              Expanded(child: Container(decoration: BoxDecoration(gradient: AppTheme.gradientPink, borderRadius: BorderRadius.circular(30)), child: ElevatedButton(onPressed: _loading ? null : _handleLogin, style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), child: Text(_loading ? '...' : 'ĐĂNG NHẬP', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 14))))),
+              Expanded(child: Container(decoration: BoxDecoration(gradient: AppTheme.gradientPink, borderRadius: BorderRadius.circular(30)), child: ElevatedButton(onPressed: _loading ? null : _handleLogin, style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), child: FittedBox(fit: BoxFit.scaleDown, child: Text(_loading ? '...' : 'ĐĂNG NHẬP', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.0, fontSize: 13)))))),
             ]),
             const SizedBox(height: 20),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [

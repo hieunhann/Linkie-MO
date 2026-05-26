@@ -83,11 +83,19 @@ class _EventsPageState extends State<EventsPage> {
           // Content
           Positioned(bottom: 0, left: 0, right: 0, child: Padding(padding: const EdgeInsets.all(24), child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text('${DateTime.parse(event.startTime).year}', style: TextStyle(color: AppTheme.primaryTeal, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text('${DateTime.parse(event.startTime).year}', style: const TextStyle(color: AppTheme.primaryTeal, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+              ),
               const SizedBox(height: 4),
               Text(event.name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 4),
-              Text(_formatDate(event.startTime), style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(_formatDate(event.startTime), style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+              ),
             ])),
             if (isLive) Container(width: 40, height: 40, decoration: BoxDecoration(color: AppTheme.primaryTeal, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: AppTheme.primaryTeal.withOpacity(0.2), blurRadius: 10)]),
               child: const Icon(Icons.arrow_forward, color: Colors.white, size: 20)),
