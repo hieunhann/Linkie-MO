@@ -66,7 +66,7 @@ class _CameraFramePageState extends State<CameraFramePage> {
 
   Future<void> _startCamera() async {
     _cameraCtl?.dispose();
-    _cameraCtl = CameraController(_cameras[_cameraIdx], ResolutionPreset.high, enableAudio: false);
+    _cameraCtl = CameraController(_cameras[_cameraIdx], ResolutionPreset.veryHigh, enableAudio: false);
     try {
       await _cameraCtl!.initialize();
       if (mounted) setState(() => _cameraError = '');
@@ -131,25 +131,35 @@ class _CameraFramePageState extends State<CameraFramePage> {
     final frame2 = await codec2.getNextFrame();
     final overlay = frame2.image;
 
-    // Create canvas
+    // Sử dụng kích thước của AR Frame (overlay) làm kích thước Canvas cơ sở để giữ trọn vẹn độ nét của thiết kế
+    final size = Size(overlay.width.toDouble(), overlay.height.toDouble());
+
+    // Tạo canvas vẽ ảnh chất lượng cao
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    final size = Size(photo.width.toDouble(), photo.height.toDouble());
 
-    // Mirror if front camera
+    // Lật ngang ảnh nếu là camera trước (selfie)
     final isFront = _cameras[_cameraIdx].lensDirection == CameraLensDirection.front;
     if (isFront) {
-      canvas.translate(size.width, 0);
-      canvas.scale(-1, 1);
-    }
-    canvas.drawImage(photo, Offset.zero, Paint());
-    if (isFront) {
+      canvas.save();
       canvas.translate(size.width, 0);
       canvas.scale(-1, 1);
     }
 
-    // Draw frame overlay
-    canvas.drawImageRect(overlay, Rect.fromLTWH(0, 0, overlay.width.toDouble(), overlay.height.toDouble()), Rect.fromLTWH(0, 0, size.width, size.height), Paint());
+    // Vẽ ảnh chụp từ camera co giãn vừa khít với kích thước khung hình AR (sử dụng lọc chất lượng cao high)
+    canvas.drawImageRect(
+      photo,
+      Rect.fromLTWH(0, 0, photo.width.toDouble(), photo.height.toDouble()),
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..filterQuality = ui.FilterQuality.high,
+    );
+
+    if (isFront) {
+      canvas.restore();
+    }
+
+    // Vẽ đè khung ảnh AR lên trên với độ phân giải gốc 1:1 sắc nét tuyệt đối
+    canvas.drawImage(overlay, Offset.zero, Paint()..filterQuality = ui.FilterQuality.high);
 
     final picture = recorder.endRecording();
     final img = await picture.toImage(size.width.toInt(), size.height.toInt());
