@@ -155,5 +155,20 @@ Tôi đã tối ưu hóa đồng thời 2 yếu tố cốt lõi trong [camera_fr
 
 *Kết quả sau khi cập nhật: Ảnh chụp xuất ra sẽ có độ phân giải cực cao của AR Frame thiết kế gốc, cả phần nền camera và viền AR đều căng nét và mịn màng 100% như những gì người dùng trải nghiệm thực tế.*
 
+---
+
+## 11. Cập Nhật Logo Google Đăng Nhập Chuẩn Phẳng Thương Hiệu (Ngày 26/05/2026)
+
+### 11.1. Hiện Trạng & Vấn Đề
+*   **Vấn đề:** Logo Google cũ được sử dụng trên nút đăng nhập là một tệp hình ảnh có sẵn chứa cả đường viền xám nhạt, bóng đổ mờ xung quanh chữ "G". Khi đặt hình ảnh này vào trong ô vuông màu trắng của nút Google Sign-In, nó tạo ra hiệu ứng lồng ghép nhiều viền vuông thừa thãi, chồng chéo lẫn nhau và có bóng tối không đồng đều, trông thiếu chuyên nghiệp và không tuân thủ phẳng (flat design) của Google.
+
+### 11.2. Giải Pháp Chỉnh Sửa
+*   **Thiết kế & thay thế Logo mới:**
+    *   Tôi đã sử dụng AI để tạo ra một file hình ảnh logo Google cực kỳ chuẩn xác và sắc nét theo đúng bộ nhận diện thương hiệu Material Design của Google.
+    *   Đặc điểm logo mới: Chữ "G" bốn màu đặc trưng (Đỏ, Vàng, Lục, Lam) phẳng hoàn toàn trên nền trắng tinh khiết tuyệt đối (`absolute pure white`), không có bất kỳ đường viền xám thừa thãi hay bóng đổ (shadow) xung quanh.
+    *   Tệp ảnh chất lượng cao này đã được lưu đè thành công vào đường dẫn [assets/images/google_logo.png](file:///d:/2026_SPR/EXE/linkie-MO/assets/images/google_logo.png) của dự án.
+*   **Hiển thị:** Khi ứng dụng render lên, logo chữ "G" mới sẽ hòa trộn đồng bộ 100% vào nền trắng phẳng của nút bấm, tạo cảm giác sang trọng, tinh tế và cực kỳ chuyên nghiệp như nút Google native của hệ thống.
+
+
 
 
