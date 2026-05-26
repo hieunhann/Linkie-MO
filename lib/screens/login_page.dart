@@ -41,10 +41,10 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
     } catch (e) {
       final msg = e.toString();
-      if (msg.contains('hủy')) {
+      if (msg.contains('hủy') || msg.contains('cancel')) {
         // User cancelled, no error shown
       } else {
-        setState(() => _error = 'Đăng nhập Google thất bại. Vui lòng thử lại.');
+        setState(() => _error = 'Đăng nhập Google thất bại: $e');
       }
     } finally {
       if (mounted) setState(() => _googleLoading = false);
