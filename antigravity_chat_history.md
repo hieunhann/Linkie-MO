@@ -167,8 +167,47 @@ Tôi đã tối ưu hóa đồng thời 2 yếu tố cốt lõi trong [camera_fr
     *   Tôi đã sử dụng AI để tạo ra một file hình ảnh logo Google cực kỳ chuẩn xác và sắc nét theo đúng bộ nhận diện thương hiệu Material Design của Google.
     *   Đặc điểm logo mới: Chữ "G" bốn màu đặc trưng (Đỏ, Vàng, Lục, Lam) phẳng hoàn toàn trên nền trắng tinh khiết tuyệt đối (`absolute pure white`), không có bất kỳ đường viền xám thừa thãi hay bóng đổ (shadow) xung quanh.
     *   Tệp ảnh chất lượng cao này đã được lưu đè thành công vào đường dẫn [assets/images/google_logo.png](file:///d:/2026_SPR/EXE/linkie-MO/assets/images/google_logo.png) của dự án.
-*   **Hiển thị:** Khi ứng dụng render lên, logo chữ "G" mới sẽ hòa trộn đồng bộ 100% vào nền trắng phẳng của nút bấm, tạo cảm giác sang trọng, tinh tế và cực kỳ chuyên nghiệp như nút Google native của hệ thống.
+*   **Hiển thị:** Khi ứng dụng render lên, logo chữ "G" mới sẽ hòa trộn đồng bộ 100% vào nền trắng phẳng của nút bấm, tạo cảm giác sang trọng, tinh tế và cực kỳ chuyên nghiệp như nút Google native của hệ thống.## 12. Tối Ưu Quyền Lưu Ảnh Thiết Bị Thực & Cấu Cấu Hình Local Testing Cổng 5002 (Ngày 27/05/2026)
+
+### 12.1. Yêu Cầu & Kế Hoạch Hoạt Động (Pha 1 của Mobile)
+Theo kế hoạch [action_plan_mo_be_deploy.md](file:///d:/2026_SPR/EXE/linkie-MO/action_plan_mo_be_deploy.md), mục tiêu của Pha 1 (Mobile) bao gồm:
+*   Đảm bảo Client Mobile chạy local lấy được Firebase ID Token và gửi đi thành công mà không gặp lỗi.
+*   Cấp quyền camera động trên iOS & Android.
+*   Trích xuất mã vân tay SHA-1 và SHA-256 phục vụ cấu hình Firebase Console Google Sign-In.
+
+### 12.2. Các Bước Cải Tiến Đã Thực Hiện
+1.  **Cải tiến Quyền Lưu Ảnh vào Thư viện (Album) cho iOS và Android thiết bị thực:**
+    *   *File sửa đổi:* [camera_frame_page.dart](file:///d:/2026_SPR/EXE/linkie-MO/lib/screens/camera_frame_page.dart)
+    *   *Chi tiết:* Thay vì chỉ xin quyền chung chung `Permission.storage.request()` vốn hoạt động tốt trên Android nhưng sẽ bị lỗi trên iOS, tôi đã bổ sung import `dart:io` và phân tách luồng xin quyền động theo thiết bị thực:
+        *   **Android:** Tiếp tục xin quyền `Permission.storage.request()`.
+        *   **iOS:** Xin quyền `Permission.photos.request()` tường minh để tương thích 100% với hệ thống phân quyền mới của Apple, tránh crash và lỗi lưu ảnh AR.
+2.  **Cung cấp Cấu hình Mẫu Chuyển đổi linh hoạt Local Backend (cổng 5002) và Production:**
+    *   *File sửa đổi:* [api_config.dart](file:///d:/2026_SPR/EXE/linkie-MO/lib/config/api_config.dart)
+    *   *Chi tiết:* Đã thiết kế lại cấu trúc ghi chú, cung cấp block cấu hình Production sạch đẹp, đồng thời thêm block cấu hình Local Testing commented out cực kỳ rõ ràng kèm hướng dẫn cụ thể cho các môi trường:
+        *   Chạy trên thiết bị thực: Hướng dẫn nhập IP local máy tính chạy Backend thay thế cho `localhost`.
+        *   Chạy trên Android Emulator (`10.0.2.2`).
+        *   Chạy trên iOS Simulator (`localhost`).
+3.  **Trích xuất Credentials Vân tay SHA-1 & SHA-256 thành công từ Local Máy:**
+    *   *Hành động:* Chạy thành công lệnh `gradlew signingReport` từ local.
+    *   *Mục đích:* Dưới đây là thông tin credentials của keystore Debug trên máy của bạn và Keystore Release chính thức để bạn gửi cho phía Backend cấu hình vào Firebase Console:
+        
+        #### 🔑 1. THÔNG TIN DEBUG KEYSTORE (Dành cho chạy thử local trên thiết bị thực/máy ảo)
+        *   **File Keystore:** `C:\Users\ACER\.android\debug.keystore`
+        *   **Alias:** `AndroidDebugKey`
+        *   **Mã SHA-1:** `CB:6D:A5:E6:45:D2:0F:54:82:BF:40:8D:38:D5:3F:BC:29:87:5C:98`
+        *   **Mã SHA-256:** `EE:65:CF:0C:F1:AF:B5:A7:90:A9:C8:1A:D2:F5:39:B6:9E:D4:6F:8A:D0:D6:5B:82:5A:E7:C6:71:0C:61:CC:6E`
+
+        #### 🔑 2. THÔNG TIN RELEASE UPLOAD KEYSTORE (Dành cho build Codemagic / Production)
+        *   **File Keystore:** `android/app/upload-keystore.jks`
+        *   **Alias:** `upload`
+        *   **Mã SHA-1:** `BF:67:62:FC:94:EC:C6:46:62:B0:13:D8:A5:1E:16:85:A7:77:9B:39`
+        *   **Mã SHA-256:** `36:44:F8:E7:A8:5E:24:28:3E:A9:63:C3:EC:3A:BC:48:52:B7:25:84:C3:3B:42:C9:4F:1B:C7:EC:7C:FB:46:81`
 
 
+4.  **Tự động hóa 100% cơ chế Ký Ứng Dụng (Android App Signing) cho Release:**
+    *   *File sửa đổi:* [build.gradle.kts](file:///d:/2026_SPR/EXE/linkie-MO/android/app/build.gradle.kts)
+    *   *Chi tiết:* Trước đó, buildType `release` mặc định sử dụng khóa ký debug của môi trường build (sẽ gây lỗi 10 nếu build trên Codemagic vì khóa debug của Codemagic khác). Để đơn giản hóa tối đa và loại bỏ bước cấu hình biến môi trường thủ công rắc rối trên Codemagic, tôi đã tích hợp trực tiếp file `upload-keystore.jks` đang có trên Git vào cấu hình `signingConfigs` của Gradle.
+    *   *Kết quả:* Khi build Release ở local hoặc trên Codemagic, Gradle sẽ **tự động** sử dụng đúng tệp `upload-keystore.jks` để ký app. Bạn hoàn toàn không cần cấu hình thêm bất kỳ biến môi trường nào liên quan đến Keystore trên Codemagic nữa!
 
-
+---
+*Tài liệu được cập nhật tự động bởi Antigravity AI.*
