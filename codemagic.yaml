@@ -11,10 +11,23 @@ workflows:
       - name: Set up local.properties
         script: |
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+      - name: Set up keystore
+        script: |
+          # Decode keystore từ env var (nếu có)
+          if [ -n "$CM_KEYSTORE" ]; then
+            echo $CM_KEYSTORE | base64 --decode > $CM_BUILD_DIR/android/app/upload-keystore.jks
+            export CM_KEYSTORE_PATH=$CM_BUILD_DIR/android/app/upload-keystore.jks
+            echo "Keystore decoded successfully"
+          else
+            echo "Warning: CM_KEYSTORE not set, will use debug signing"
+          fi
       - name: Get dependencies
         script: flutter pub get
       - name: Build Android APK (File cài đặt trực tiếp)
         script: |
+          if [ -n "$CM_KEYSTORE" ]; then
+            export CM_KEYSTORE_PATH=$CM_BUILD_DIR/android/app/upload-keystore.jks
+          fi
           flutter build apk --release --build-name=1.0.$BUILD_NUMBER --build-number=$BUILD_NUMBER
     artifacts:
       - build/app/outputs/flutter-apk/*.apk

@@ -33,16 +33,34 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("upload-keystore.jks")
-            storePassword = "linkie123456"
-            keyAlias = "upload"
-            keyPassword = "linkie123456"
+            // CI (Codemagic): keystore được decode từ env var vào CM_KEYSTORE_PATH
+            // Local: dùng file upload-keystore.jks trong thư mục app
+            val cmKeystorePath = System.getenv("CM_KEYSTORE_PATH")
+            val localKeystore = file("upload-keystore.jks")
+
+            if (cmKeystorePath != null && file(cmKeystorePath).exists()) {
+                storeFile = file(cmKeystorePath)
+                storePassword = System.getenv("CM_KEYSTORE_PASSWORD") ?: "linkie123456"
+                keyAlias = System.getenv("CM_KEY_ALIAS") ?: "upload"
+                keyPassword = System.getenv("CM_KEY_PASSWORD") ?: "linkie123456"
+            } else if (localKeystore.exists()) {
+                storeFile = localKeystore
+                storePassword = "linkie123456"
+                keyAlias = "upload"
+                keyPassword = "linkie123456"
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            val releaseConfig = signingConfigs.findByName("release")
+            signingConfig = if (releaseConfig?.storeFile?.exists() == true) {
+                releaseConfig
+            } else {
+                // Fallback: dùng debug signing nếu không có keystore
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
