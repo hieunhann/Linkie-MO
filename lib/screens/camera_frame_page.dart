@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -106,7 +107,11 @@ class _CameraFramePageState extends State<CameraFramePage> {
       final composited = await _compositeImages(photoBytes, frameBytes);
 
       // Save to gallery
-      await Permission.storage.request();
+      if (Platform.isAndroid) {
+        await Permission.storage.request();
+      } else if (Platform.isIOS) {
+        await Permission.photos.request();
+      }
       final fileName = 'linkie-${_eventName.replaceAll(' ', '-').toLowerCase()}-${DateTime.now().millisecondsSinceEpoch}.jpg';
       await ImageGallerySaverPlus.saveImage(composited, name: fileName, quality: 92);
 

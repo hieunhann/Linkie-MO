@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "900115746759-f2ok1gl8an6jd3980ub0s9n45jrkdi87.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.linkie.linkie_mo",
+            "certificate_hash": "cb6da5e645d20f5482bf408d38d53fbc29875c98"
+          }
+        },
+        {
           "client_id": "900115746759-pseajr6no1g70a6f1aca6cd45t2bhutp.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
