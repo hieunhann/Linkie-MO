@@ -165,7 +165,7 @@ class _SaveScreenState extends State<SaveScreen>
       } else {
         setState(() {
           _savingTimelapse = false;
-          _timelapseError = 'Không thể tạo video. Cần cài đặt FFmpeg.';
+          _timelapseError = 'Không thể tạo video. Vui lòng thử lại!';
         });
       }
     } catch (e) {
