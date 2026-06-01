@@ -5,6 +5,7 @@ import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../models/photobooth_session.dart';
 import '../../providers/event_provider.dart';
 import '../../services/photobooth_compositor.dart';
@@ -135,12 +136,9 @@ class _SaveScreenState extends State<SaveScreen>
       );
 
       if (mp4Path != null) {
-        // Save MP4 to gallery
-        final mp4Bytes = await File(mp4Path).readAsBytes();
-        await ImageGallerySaverPlus.saveImage(
-          mp4Bytes,
-          name: 'linkie-timelapse-${DateTime.now().millisecondsSinceEpoch}.mp4',
-        );
+        // Save MP4 to gallery using saveFile (not saveImage — saveImage is for images only)
+        await ImageGallerySaverPlus.saveFile(mp4Path,
+            name: 'linkie-timelapse-${DateTime.now().millisecondsSinceEpoch}');
 
         setState(() {
           _savedTimelapse = true;
@@ -176,22 +174,18 @@ class _SaveScreenState extends State<SaveScreen>
           '${tempDir.path}/linkie_photobooth_${DateTime.now().millisecondsSinceEpoch}.jpg');
       await file.writeAsBytes(widget.compositeImage);
 
-      // Try share_plus if available, otherwise show snackbar
-      try {
-        // Dynamic import to avoid crash if share_plus not available
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Ảnh đã lưu tại: ${file.path}'),
-              backgroundColor: AppTheme.primaryTeal,
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint('Share error: $e');
-      }
+      // Share photo using share_plus package
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Check out my photobooth photo from Linkie! 📸 #LinkiePhotobooth',
+      );
     } catch (e) {
       debugPrint('Share error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi chia sẻ: $e')),
+        );
+      }
     }
   }
 

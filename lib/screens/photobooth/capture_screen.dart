@@ -40,6 +40,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
   double _currentZoom = 1.0;
   double _baseScaleZoom = 1.0;
 
+  bool _isCapturing = false;
+  FlashMode _flashMode = FlashMode.off;
+
   @override
   void initState() {
     super.initState();
@@ -63,7 +66,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     if (_cameraIdx < 0) _cameraIdx = 0;
 
     await _startCamera();
-    setState(() => _loading = false);
+    if (mounted) setState(() => _loading = false);
 
     // Start timelapse recording
     _startTimelapseRecording();
@@ -73,7 +76,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     _cameraCtl?.dispose();
     _cameraCtl = CameraController(
       _cameras[_cameraIdx],
-      ResolutionPreset.max, // Highest quality
+      ResolutionPreset.high, // High 1080p is fast, crisp, and RAM efficient
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
@@ -85,6 +88,14 @@ class _CaptureScreenState extends State<CaptureScreen> {
       _currentZoom = _minZoom;
       widget.session.isFrontCamera =
           _cameras[_cameraIdx].lensDirection == CameraLensDirection.front;
+
+      // Apply initial FlashMode for back camera
+      if (!widget.session.isFrontCamera) {
+        await _cameraCtl!.setFlashMode(_flashMode);
+      } else {
+        await _cameraCtl!.setFlashMode(FlashMode.off);
+      }
+
       if (mounted) setState(() => _error = '');
     } catch (e) {
       if (mounted) setState(() => _error = 'Lỗi camera: $e');
@@ -98,17 +109,49 @@ class _CaptureScreenState extends State<CaptureScreen> {
   }
 
   void _startTimelapseRecording() {
-    _timelapseTimer = Timer.periodic(const Duration(milliseconds: 500), (_) async {
-      if (_cameraCtl == null || !_cameraCtl!.value.isInitialized) return;
+    _timelapseTimer?.cancel();
+    // Record every 1.5 seconds instead of 500ms to prevent camera buffer overload
+    _timelapseTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) async {
+      if (_cameraCtl == null || 
+          !_cameraCtl!.value.isInitialized || 
+          _isCapturing || 
+          _showCountdown) return;
       try {
         final photo = await _cameraCtl!.takePicture();
         final bytes = await photo.readAsBytes();
         final resized = await PhotoboothCompositor.resizeForTimelapse(bytes);
-        widget.session.timelapseFrames.add(resized);
+        
+        // Final sanity check before adding frame
+        if (mounted && !_isCapturing && !_showCountdown) {
+          widget.session.timelapseFrames.add(resized);
+        }
       } catch (_) {
-        // Skip frame if camera is busy
+        // Skip frame if camera is busy or disposed
       }
     });
+  }
+
+  Future<void> _toggleFlash() async {
+    if (_cameraCtl == null || !_cameraCtl!.value.isInitialized) return;
+    if (_cameras[_cameraIdx].lensDirection == CameraLensDirection.front) return;
+
+    FlashMode newMode;
+    if (_flashMode == FlashMode.off) {
+      newMode = FlashMode.always;
+    } else if (_flashMode == FlashMode.always) {
+      newMode = FlashMode.auto;
+    } else {
+      newMode = FlashMode.off;
+    }
+
+    try {
+      await _cameraCtl!.setFlashMode(newMode);
+      setState(() {
+        _flashMode = newMode;
+      });
+    } catch (e) {
+      debugPrint('Error setting flash mode: $e');
+    }
   }
 
   Future<void> _handleZoom(double scale) async {
@@ -122,49 +165,69 @@ class _CaptureScreenState extends State<CaptureScreen> {
   }
 
   void _startCapture() {
+    // Immediately stop timelapse timer to free camera resources during countdown
+    _timelapseTimer?.cancel();
     setState(() => _showCountdown = true);
   }
 
   Future<void> _doCapture() async {
-    if (_cameraCtl == null || !_cameraCtl!.value.isInitialized) return;
+    if (_cameraCtl == null || !_cameraCtl!.value.isInitialized || _isCapturing) return;
+
+    setState(() {
+      _isCapturing = true;
+      _flashVisible = true; // Trigger white flash screen IMMEDIATELY for instant feedback
+    });
+
+    // Animate white flash overlay fade out quickly
+    Future.delayed(const Duration(milliseconds: 150), () {
+      if (mounted) setState(() => _flashVisible = false);
+    });
 
     try {
-      // Pause timelapse during capture
+      // Ensure timelapse is definitely stopped during takePicture
       _timelapseTimer?.cancel();
 
       final photo = await _cameraCtl!.takePicture();
       final bytes = await photo.readAsBytes();
 
-      // Flash effect
-      setState(() => _flashVisible = true);
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) setState(() => _flashVisible = false);
-      });
-
       widget.session.addPhoto(bytes);
 
       // Check if we have enough photos
       if (widget.session.capturedPhotos.length >= widget.session.requiredPhotoCount) {
-        // Stop timelapse and auto-capture
+        // Stop timelapse and auto-capture completely
         _autoCaptureTimer?.cancel();
         _timelapseTimer?.cancel();
-        // Small delay for flash to complete
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) widget.onComplete();
+        await Future.delayed(const Duration(milliseconds: 300));
+        // Reset _isCapturing before navigating away to prevent stuck state
+        if (mounted) {
+          setState(() => _isCapturing = false);
+          widget.onComplete();
+        }
         return;
       }
 
-      // Resume timelapse
+      setState(() {
+        _isCapturing = false;
+      });
+
+      // Resume timelapse recording for subsequent photo capture
       _startTimelapseRecording();
 
       // Auto-capture next photo
       if (_autoCapture) {
         _autoCaptureTimer = Timer(const Duration(seconds: 3), _startCapture);
       }
-
-      setState(() {});
     } catch (e) {
       debugPrint('Capture error: $e');
+      setState(() {
+        _isCapturing = false;
+        _flashVisible = false;
+      });
+      // Safety resume
+      _startTimelapseRecording();
+      if (_autoCapture) {
+        _autoCaptureTimer = Timer(const Duration(seconds: 3), _startCapture);
+      }
     }
   }
 
@@ -304,6 +367,58 @@ class _CaptureScreenState extends State<CaptureScreen> {
                   ),
                 ),
 
+                // Flash toggle (top right, left of timelapse REC)
+                if (_cameras.isNotEmpty &&
+                    _cameras[_cameraIdx].lensDirection != CameraLensDirection.front)
+                  Positioned(
+                    top: 12,
+                    right: 80,
+                    child: GestureDetector(
+                      onTap: _toggleFlash,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _flashMode != FlashMode.off
+                                ? AppTheme.primaryPink
+                                : Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _flashMode == FlashMode.always
+                                  ? Icons.flash_on
+                                  : _flashMode == FlashMode.auto
+                                      ? Icons.flash_auto
+                                      : Icons.flash_off,
+                              color: _flashMode != FlashMode.off
+                                  ? AppTheme.primaryPink
+                                  : Colors.white,
+                              size: 10,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _flashMode == FlashMode.always
+                                  ? 'FLASH: BẬT'
+                                  : _flashMode == FlashMode.auto
+                                      ? 'FLASH: AUTO'
+                                      : 'FLASH: TẮT',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // Timelapse indicator (top right)
                 Positioned(
                   top: 12,
@@ -392,7 +507,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
               // Capture button
               GestureDetector(
-                onTap: _showCountdown ? null : _startCapture,
+                onTap: (_showCountdown || _isCapturing) ? null : _startCapture,
                 child: Container(
                   width: 72,
                   height: 72,
@@ -414,7 +529,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                       height: 56,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _showCountdown
+                        color: (_showCountdown || _isCapturing)
                             ? Colors.grey
                             : AppTheme.primaryPink.withOpacity(0.15),
                       ),

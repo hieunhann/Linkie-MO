@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:ffmpeg_kit_flutter_new_min_gpl/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new_min_gpl/return_code.dart';
 import '../models/photobooth_session.dart';
 import '../models/sticker_item.dart';
 
@@ -323,7 +325,7 @@ class PhotoboothCompositor {
       // inputFps=2 (2 frames captured per sec), outputFps=30 → 15x speedup
       final command =
           '-y -framerate $inputFps -i $framesDir/frame_%04d.jpg '
-          '-vf "scale=540:960,fps=$outputFps" '
+          '-vf scale=540:960,fps=$outputFps '
           '-c:v libx264 -preset ultrafast -pix_fmt yuv420p '
           '-movflags +faststart '
           '$outputPath';
@@ -351,10 +353,18 @@ class PhotoboothCompositor {
   /// Try to run ffmpeg command — returns true if successful
   static Future<bool> _runFfmpeg(String command) async {
     try {
-      // NOTE: ffmpeg_kit_flutter is retired and removed from Maven Central
-      // Falling back to returning false to disable timelapse MP4 generation for now.
-      debugPrint('Timelapse generation disabled: FFmpegKit not available.');
-      return false;
+      debugPrint('FFmpeg command: $command');
+      final session = await FFmpegKit.execute(command);
+      final returnCode = await session.getReturnCode();
+      if (ReturnCode.isSuccess(returnCode)) {
+        debugPrint('FFmpeg execution succeeded!');
+        return true;
+      } else {
+        final state = await session.getState();
+        final failStackTrace = await session.getFailStackTrace();
+        debugPrint('FFmpeg execution failed with state $state, failStackTrace: $failStackTrace');
+        return false;
+      }
     } catch (e) {
       debugPrint('FFmpeg execution failed: $e');
       return false;

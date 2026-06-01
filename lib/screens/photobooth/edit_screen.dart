@@ -31,6 +31,7 @@ class _EditScreenState extends State<EditScreen> {
   Uint8List? _compositePreview;
   int _selectedStickerIdx = -1;
   bool _showDeleteZone = false;
+  bool _stickerInDeleteZone = false;
   final GlobalKey _canvasKey = GlobalKey();
 
   @override
@@ -267,32 +268,51 @@ class _EditScreenState extends State<EditScreen> {
                                 setState(() => sticker.rotation = rotation);
                               },
                               onDeleteZone: () => _removeSticker(idx),
+                              onDragStateChanged: (isDragging, inDeleteZone) {
+                                setState(() {
+                                  _showDeleteZone = isDragging;
+                                  _stickerInDeleteZone = inDeleteZone;
+                                });
+                              },
                             );
                           }),
 
-                          // Delete zone indicator
+                          // Premium Delete zone indicator: Bottom-center round X button
                           if (_showDeleteZone)
                             Positioned(
-                              bottom: 0,
+                              bottom: 16,
                               left: 0,
                               right: 0,
-                              height: canvasSize.height * 0.15,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.bottomCenter,
-                                    end: Alignment.topCenter,
-                                    colors: [
-                                      Colors.red.withOpacity(0.4),
-                                      Colors.transparent,
+                              child: Center(
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  width: _stickerInDeleteZone ? 60 : 50,
+                                  height: _stickerInDeleteZone ? 60 : 50,
+                                  decoration: BoxDecoration(
+                                    color: _stickerInDeleteZone
+                                        ? Colors.red.withOpacity(0.95)
+                                        : Colors.black.withOpacity(0.6),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _stickerInDeleteZone ? Colors.white : Colors.white.withOpacity(0.4),
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: _stickerInDeleteZone
+                                            ? Colors.red.withOpacity(0.4)
+                                            : Colors.black.withOpacity(0.3),
+                                        blurRadius: 12,
+                                        spreadRadius: 2,
+                                      ),
                                     ],
                                   ),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                    size: 28,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.close, // Premium White X
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
                                   ),
                                 ),
                               ),
