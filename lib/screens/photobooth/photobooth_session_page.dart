@@ -231,6 +231,7 @@ class _PhotoboothSessionPageState extends State<PhotoboothSessionPage> {
         return SaveScreen(
           session: _session,
           compositeImage: _compositeResult!,
+          frames: widget.frames,
           eventName: widget.eventName,
           eventId: widget.eventId,
           onRestart: _onRestart,

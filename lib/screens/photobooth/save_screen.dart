@@ -1,12 +1,15 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/photobooth_session.dart';
+import '../../models/ar_frame.dart';
+import '../../config/api_config.dart';
 import '../../providers/event_provider.dart';
 import '../../services/photobooth_compositor.dart';
 import '../../utils/theme.dart';
@@ -15,6 +18,7 @@ import '../../utils/theme.dart';
 class SaveScreen extends StatefulWidget {
   final PhotoboothSession session;
   final Uint8List compositeImage;
+  final List<ArFrame> frames;
   final String eventName;
   final String eventId;
   final VoidCallback onRestart;
@@ -23,6 +27,7 @@ class SaveScreen extends StatefulWidget {
     super.key,
     required this.session,
     required this.compositeImage,
+    required this.frames,
     required this.eventName,
     required this.eventId,
     required this.onRestart,
@@ -43,9 +48,13 @@ class _SaveScreenState extends State<SaveScreen>
   late AnimationController _celebrationCtl;
   late Animation<double> _celebrationAnim;
 
+  late Uint8List _currentCompositeImage;
+  bool _isRecompositing = false;
+
   @override
   void initState() {
     super.initState();
+    _currentCompositeImage = widget.compositeImage;
     _celebrationCtl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -76,7 +85,7 @@ class _SaveScreenState extends State<SaveScreen>
       final fileName =
           'linkie-photobooth-${widget.eventName.replaceAll(' ', '-').toLowerCase()}-${DateTime.now().millisecondsSinceEpoch}.jpg';
       await ImageGallerySaverPlus.saveImage(
-        widget.compositeImage,
+        _currentCompositeImage,
         name: fileName,
         quality: 95,
       );
@@ -172,18 +181,67 @@ class _SaveScreenState extends State<SaveScreen>
       final tempDir = await getTemporaryDirectory();
       final file = File(
           '${tempDir.path}/linkie_photobooth_${DateTime.now().millisecondsSinceEpoch}.jpg');
-      await file.writeAsBytes(widget.compositeImage);
+      await file.writeAsBytes(_currentCompositeImage);
+
+      // Get render box for iOS iPad compatibility (prevents PlatformException)
+      final box = context.findRenderObject() as RenderBox?;
+      final rect = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
 
       // Share photo using share_plus package
       await Share.shareXFiles(
         [XFile(file.path)],
         text: 'Check out my photobooth photo from Linkie! 📸 #LinkiePhotobooth',
+        sharePositionOrigin: rect,
       );
     } catch (e) {
       debugPrint('Share error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Lỗi chia sẻ: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _changeFrame(ArFrame? newFrame) async {
+    if (_isRecompositing) return;
+    setState(() {
+      _isRecompositing = true;
+    });
+
+    try {
+      Uint8List? frameBytes;
+      if (newFrame != null) {
+        final frameUrl = newFrame.assetUrl.startsWith('http')
+            ? newFrame.assetUrl
+            : ApiConfig.ensureImageUrl(newFrame.assetUrl);
+        final response = await http.get(Uri.parse(frameUrl));
+        frameBytes = response.bodyBytes;
+      }
+
+      final regenerated = await PhotoboothCompositor.compositePhotobooth(
+        photos: widget.session.selectedPhotos,
+        layout: widget.session.layout,
+        frameOverlayBytes: frameBytes,
+        stickers: widget.session.stickers,
+        isFrontCamera: widget.session.isFrontCamera,
+      );
+
+      setState(() {
+        widget.session.selectedFrame = newFrame;
+        _currentCompositeImage = regenerated;
+        _isRecompositing = false;
+        _savedPhoto = false; // Reset save status since photo changed
+        _savedTimelapse = false; // Reset timelapse status
+      });
+    } catch (e) {
+      debugPrint('Recomposite error: $e');
+      setState(() {
+        _isRecompositing = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi thay đổi khung: $e')),
         );
       }
     }
@@ -235,14 +293,93 @@ class _SaveScreenState extends State<SaveScreen>
                 ],
               ),
               clipBehavior: Clip.antiAlias,
-              child: Image.memory(
-                widget.compositeImage,
-                fit: BoxFit.cover,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.memory(
+                    _currentCompositeImage,
+                    fit: BoxFit.cover,
+                  ),
+                  if (_isRecompositing)
+                    Container(
+                      color: Colors.black.withOpacity(0.55),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: AppTheme.primaryPink),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // Horizontal Frame Selector
+          if (widget.frames.isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Thay đổi Khung AR',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 72,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: widget.frames.length + 1, // +1 for "No Frame" option
+                itemBuilder: (context, index) {
+                  final isNoFrame = index == 0;
+                  final frame = isNoFrame ? null : widget.frames[index - 1];
+                  final isSelected = isNoFrame 
+                      ? widget.session.selectedFrame == null
+                      : widget.session.selectedFrame?.id == frame?.id;
+
+                  return GestureDetector(
+                    onTap: () => _changeFrame(frame),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 52,
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: isSelected 
+                            ? AppTheme.primaryPink.withOpacity(0.12)
+                            : Colors.white.withOpacity(0.04),
+                        border: Border.all(
+                          color: isSelected ? AppTheme.primaryPink : AppTheme.borderLight,
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                      ),
+                      child: isNoFrame
+                          ? const Center(
+                              child: Icon(Icons.block, color: Colors.white54, size: 20),
+                            )
+                          : ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                frame!.assetUrl.startsWith('http')
+                                    ? frame.assetUrl
+                                    : ApiConfig.ensureImageUrl(frame.assetUrl),
+                                fit: BoxFit.contain,
+                                errorBuilder: (c, e, s) =>
+                                    const Icon(Icons.broken_image, color: Colors.grey, size: 16),
+                              ),
+                            ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+          ] else ...[
+            const SizedBox(height: 20),
+          ],
 
           // Action buttons grid
           Row(
