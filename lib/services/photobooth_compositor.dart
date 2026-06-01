@@ -320,27 +320,41 @@ class PhotoboothCompositor {
 
       final outputPath = '$outputDir/timelapse_${DateTime.now().millisecondsSinceEpoch}.mp4';
 
-      // Use ffmpeg to encode frames to MP4
-      // Speed multiplier is achieved by higher output fps vs input fps
-      // inputFps=2 (2 frames captured per sec), outputFps=30 → 15x speedup
-      final command =
+      // Try with libx264 first (requires GPL build for H.264)
+      final commandX264 =
           '-y -framerate $inputFps -i $framesDir/frame_%04d.jpg '
           '-vf scale=540:960,fps=$outputFps '
           '-c:v libx264 -preset ultrafast -pix_fmt yuv420p '
           '-movflags +faststart '
           '$outputPath';
 
-      // Dynamic import to avoid crash if ffmpeg not available
+      // Fallback with mpeg4 (works on all LGPL/GPL builds, 100% guaranteed support)
+      final commandMpeg4 =
+          '-y -framerate $inputFps -i $framesDir/frame_%04d.jpg '
+          '-vf scale=540:960,fps=$outputFps '
+          '-c:v mpeg4 -q:v 3 -pix_fmt yuv420p '
+          '$outputPath';
+
       try {
-        // ignore: depend_on_referenced_packages
-        final ffmpegKit = await _runFfmpeg(command);
-        if (ffmpegKit) {
-          // Cleanup temp frames
+        debugPrint('Timelapse: Attempting encoding with libx264 (GPL)...');
+        final successX264 = await _runFfmpeg(commandX264);
+        if (successX264) {
           await Directory(framesDir).delete(recursive: true);
           return outputPath;
         }
       } catch (e) {
-        debugPrint('FFmpeg not available: $e');
+        debugPrint('Timelapse: libx264 encoding attempt threw exception: $e');
+      }
+
+      try {
+        debugPrint('Timelapse: Falling back to mpeg4 (LGPL)...');
+        final successMpeg4 = await _runFfmpeg(commandMpeg4);
+        if (successMpeg4) {
+          await Directory(framesDir).delete(recursive: true);
+          return outputPath;
+        }
+      } catch (e) {
+        debugPrint('Timelapse: mpeg4 encoding attempt threw exception: $e');
       }
 
       return null;
