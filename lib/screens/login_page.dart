@@ -33,6 +33,22 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  String _parseGoogleSignInError(dynamic error) {
+    final errorStr = error.toString();
+    if (errorStr.contains('PlatformException')) {
+      if (errorStr.contains(', 7,') || errorStr.contains(': 7,') || errorStr.contains(': 7:') || (errorStr.contains('sign_in_failed') && errorStr.contains(': 7'))) {
+        return 'Không thể kết nối. Vui lòng kiểm tra lại kết nối mạng của bạn.';
+      }
+      if (errorStr.contains(', 10,') || errorStr.contains(': 10,') || errorStr.contains(': 10:')) {
+        return 'Lỗi cấu hình hệ thống. Vui lòng liên hệ ban quản trị để được hỗ trợ.';
+      }
+      if (errorStr.contains(', 12500,') || errorStr.contains(': 12500,') || errorStr.contains(': 12500:')) {
+        return 'Dịch vụ xác thực tạm thời gián đoạn. Vui lòng thử lại sau.';
+      }
+    }
+    return 'Đăng nhập Google thất bại. Vui lòng thử lại.';
+  }
+
   Future<void> _handleGoogleLogin() async {
     setState(() { _error = ''; _googleLoading = true; });
     try {
@@ -44,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
       if (msg.contains('hủy') || msg.contains('cancel')) {
         // User cancelled, no error shown
       } else {
-        setState(() => _error = 'Đăng nhập Google thất bại: $e');
+        setState(() => _error = _parseGoogleSignInError(e));
       }
     } finally {
       if (mounted) setState(() => _googleLoading = false);
